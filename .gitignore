@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+.vscode/
+
+target/
+build/
+*.class
+*.jar
+
+*.log
+*.tmp
+
+.env
+.env.*
+!.env.example
