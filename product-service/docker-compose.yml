@@ -25,4 +25,4 @@ services:
       - mongodb           # Espera a que la BD arranque primero
 
 volumes:
-  mongo_data:             # Declaramos el volumen persistente
+  mongo_data:

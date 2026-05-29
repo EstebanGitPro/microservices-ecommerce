@@ -1,12 +1,12 @@
 spring:
   application:
     name: product-service
-    threads:
-      virtual:
-        enabled: true
-    data:
-      mongodb:
-        uri: mongodb://root:password@localhost:27017/product-db?authSource=admin
+  threads:
+    virtual:
+      enabled: true
+  data:
+    mongodb:
+     database: product-db
 
 server:
   port: 8080
