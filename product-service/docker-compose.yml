@@ -16,11 +16,16 @@ services:
     build: .              # Usa el Dockerfile de la carpeta actual
     container_name: product-service
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       # Sobrescribimos la config de Spring para usar Docker
       # Fíjate: usamos 'mongodb' en lugar de 'localhost'
-      - SPRING_DATA_MONGODB_URI=mongodb://root:password@mongodb:27017/product-db?authSource=admin
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=product-db
+      - MONGO_USERNAME=root
+      - MONGO_PASSWORD=password
+      - MONGO_AUTH_DB=admin
     depends_on:
       - mongodb           # Espera a que la BD arranque primero
 
