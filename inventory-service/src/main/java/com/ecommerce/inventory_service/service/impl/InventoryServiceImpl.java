@@ -2,6 +2,7 @@ package com.ecommerce.inventory_service.service.impl;
 
 import com.ecommerce.inventory_service.dto.InventoryRequestDTO;
 import com.ecommerce.inventory_service.dto.InventoryResponseDTO;
+import com.ecommerce.inventory_service.exception.DuplicateResourceException;
 import com.ecommerce.inventory_service.exception.ResourceNotFoundException;
 import com.ecommerce.inventory_service.mapper.InventoryMapper;
 import com.ecommerce.inventory_service.model.Inventory;
@@ -36,7 +37,7 @@ public class InventoryServiceImpl implements InventoryService {
         // Validamos duplicados (Opcional, pero recomendado)
         boolean exists = inventoryRepository.existsBySku(inventoryRequestDTO.getSku());
         if (exists) {
-            throw new RuntimeException("El inventario para el SKU " + inventoryRequestDTO.getSku() + " ya existe");
+            throw new DuplicateResourceException("Inventario", "sku", inventoryRequestDTO.getSku());
         }
 
         Inventory inventory = inventoryMapper.toModel(inventoryRequestDTO);
@@ -83,5 +84,23 @@ public class InventoryServiceImpl implements InventoryService {
         }
         inventoryRepository.deleteById(id);
         log.info("Inventario eliminado con ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public String reduceStock(String sku, Integer quantity) {
+
+        var inventory = inventoryRepository.findBySku(sku)
+                .orElseThrow(
+                        () -> new RuntimeException("Inventario sku" + sku)
+                );
+
+        if (inventory.getQuantity() < quantity) {
+            throw new RuntimeException("Stock insuficiente para: " + sku);
+        }
+        inventory.setQuantity(inventory.getQuantity() - quantity);
+        inventoryRepository.save(inventory);
+
+        return sku;
     }
 }
