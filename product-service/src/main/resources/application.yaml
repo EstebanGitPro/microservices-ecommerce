@@ -1,12 +1,21 @@
 spring:
   application:
     name: product-service
-    threads:
-      virtual:
-        enabled: true
-    data:
-      mongodb:
-        uri: mongodb://root:password@localhost:27017/product-db?authSource=admin
+  threads:
+    virtual:
+      enabled: true
+  data:
+    mongodb:
+      # Sintaxis: ${NOMBRE_VAR_ENTORNO : VALOR_POR_DEFECTO}
+      host: ${MONGO_HOST:localhost}
+      port: ${MONGO_PORT:27017}
+      database: ${MONGO_DATABASE:product-db}
+      username: ${MONGO_USERNAME:root}
+      password: ${MONGO_PASSWORD:password}
+      authentication-database: ${MONGO_AUTH_DB:admin}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-stacktrace: never
