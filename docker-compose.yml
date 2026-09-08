@@ -3,6 +3,7 @@ services:
   mongodb:
     image: mongo:7.0.4
     container_name: mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
@@ -14,18 +15,20 @@ services:
   inventory-db:
       image: mysql:8
       container_name: inventory-db
+      restart: unless-stopped
       ports:
         - "3306:3306"
       environment:
-          MSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: inventory-db
       volumes:
-        - inventory_db:var/lib/msql
+        - inventory_db:/var/lib/mysql
 
 
   order-db:
     image: postgres:16-alpine
     container_name: order-db
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
@@ -33,15 +36,15 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB:  order-db
     volumes:
-      - order_db:var/lib/postgresql/data
+      - order_db:/var/lib/postgresql/data
 
 
 
 
 volumes:
   mongo_data:
-  inventory_data_data:
-  order_data:
+  inventory_db:
+  order_db:
 
 
 
