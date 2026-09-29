@@ -6,6 +6,8 @@ import com.ecommerce.order_service.dto.OrderResponseDTO;
 import com.ecommerce.order_service.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,9 +20,12 @@ public class OrderController {
 
     private final OrderService orderService;
 
+
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public OrderResponseDTO placeOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
+
         return orderService.placeOrder(orderRequest);
     }
 
