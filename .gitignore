@@ -16,3 +16,6 @@ build/
 
 # AI tooling artifacts
 .atl/
+
+# Config repo (separate git repository: microservices-conf-data)
+config-data/
