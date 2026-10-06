@@ -38,6 +38,7 @@ jobs:
 
       - uses: advanced-security/maven-dependency-submission-action@v6
         with:
-          directory: ${{ matrix.service }}
+          # Must be absolute: a relative path is resolved twice (<service>/<service>/mvnw)
+          directory: ${{ github.workspace }}/${{ matrix.service }}
           # One snapshot per service; without it each job overwrites the previous one
           correlator: ${{ github.job }}-${{ matrix.service }}
