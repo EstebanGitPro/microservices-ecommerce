@@ -32,6 +32,7 @@
 		<tomcat.version>11.0.26</tomcat.version>
 		<jackson-bom.version>3.1.7</jackson-bom.version>
 		<netty.version>4.2.19.Final</netty.version>
+		<rabbit-amqp-client.version>5.34.0</rabbit-amqp-client.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -65,6 +66,21 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-rabbitmq</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

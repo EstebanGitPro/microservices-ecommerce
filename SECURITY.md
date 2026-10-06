@@ -40,6 +40,18 @@ Dependabot (`.github/dependabot.yml`) revisa los seis servicios cada lunes y abr
 | Bouncy Castle (CVE-2026-71891) | 1.81 / 1.85.2 | 1.86 | todos excepto notification-service | Spring Cloud 2025.1.3 + `<dependencyManagement>` |
 | FreeMarker | 2.3.34 | 2.3.35 | discovery-server | `freemarker.version` |
 | httpclient 4.x | 4.5.3 | 4.5.14 | discovery-server | `<dependencyManagement>` |
+| RabbitMQ Java Client (7 CVE, ver nota) | 5.27.1 | 5.34.0 | notification-service | `rabbit-amqp-client.version` |
+
+### Nota: RabbitMQ Java Client 5.27.1 → 5.34.0
+
+Es un salto de versión menor (excepción a la regla 5), aplicado porque:
+
+- Corrige 7 CVE en la lectura de frames y valores del protocolo AMQP (CVE-2026-61634, 63335, 63336, 63337, 69219, 69220 y 75516). Ese código lo usa Spring AMQP en cualquier conexión al broker.
+- `notification-service` todavía no tiene lógica de mensajería, así que el salto no rompe código existente.
+- El único cambio incompatible documentado (5.33.0) afecta solo a conexiones TLS, y el proyecto no usa TLS con RabbitMQ.
+- `RabbitRoundTripTests` envía y recibe un mensaje contra un RabbitMQ real (Testcontainers) con Spring AMQP 4.0.5.
+
+Ninguna versión de Spring usa todavía amqp-client 5.34 (Spring AMQP 4.1 usa 5.31.0). Al subir Spring Boot, hay que revisar si el override sigue haciendo falta.
 
 ## Mitigadas
 
@@ -73,13 +85,6 @@ Dependabot (`.github/dependabot.yml`) revisa los seis servicios cada lunes y abr
 - **Por qué no aplica**: el config-server clona el repositorio de configuración por HTTPS. El soporte SSH/SFTP de JGit nunca se usa.
 - **Por qué no se sube**: JGit 7.4 está compilado contra SSHD 2.16.
 - **Revisar si**: `spring.cloud.config.server.git.uri` pasa a usar SSH (`git@...` o `ssh://...`).
-
-### RabbitMQ Java Client — `Class.forName` con datos no confiables en JsonRpcClient
-
-- **Servicio**: notification-service (amqp-client 5.27.1, corregido en 5.33.0)
-- **Por qué no aplica**: ni el código del proyecto ni Spring AMQP 4.0.5 usan `com.rabbitmq.tools.jsonrpc`.
-- **Por qué no se sube**: la línea 5.27.x no tiene backport.
-- **Revisar si**: se empieza a usar `JsonRpcClient` o `RpcServer` del cliente de RabbitMQ.
 
 ## Cómo verificar una alerta nueva
 
