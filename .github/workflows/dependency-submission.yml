@@ -1,0 +1,43 @@
+name: Dependency submission
+
+# Sends each service's full Maven dependency tree (including transitive
+# dependencies) to the GitHub dependency graph, so Dependabot alerts also
+# cover libraries pulled in by Spring Boot starters. Alerts are computed for
+# the default branch, so this runs on pushes to main.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  submit:
+    name: submit (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - config-server
+          - discovery-server
+          - inventory-service
+          - notification-service
+          - order-service
+          - product-service
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: ${{ matrix.service }}/pom.xml
+
+      - uses: advanced-security/maven-dependency-submission-action@v6
+        with:
+          directory: ${{ matrix.service }}
+          # One snapshot per service; without it each job overwrites the previous one
+          correlator: ${{ github.job }}-${{ matrix.service }}
