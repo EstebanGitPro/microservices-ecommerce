@@ -24,6 +24,8 @@ Cada CVE aceptada tiene una **condición de revisión**: si esa condición se cu
 
 Todos los overrides tienen un comentario `remove once Spring Boot manages...`. Al subir Spring Boot, hay que revisarlos y quitar los que ya no hagan falta.
 
+Dependabot (`.github/dependabot.yml`) revisa los seis servicios cada lunes y abre PRs contra `develop` solo con actualizaciones de patch, agrupadas en un único PR.
+
 ## Corregidas
 
 | Librería | Versión anterior | Versión actual | Servicios | Mecanismo |
