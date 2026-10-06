@@ -14,7 +14,7 @@ Proyecto de ecommerce basado en microservicios con Spring Boot.
 
 - Java 21
 - Maven Wrapper incluido en cada servicio
-- Docker, para levantar las dependencias del `product-service`
+- Docker, para levantar las dependencias del `product-service` y para ejecutar los tests (usan Testcontainers)
 
 ## Ejecucion local
 

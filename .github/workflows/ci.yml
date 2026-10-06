@@ -40,6 +40,6 @@ jobs:
           cache: maven
           cache-dependency-path: ${{ matrix.service }}/pom.xml
 
-      # Tests are skipped until they no longer need a running config-server and remote config.
-      - name: Compile and package
-        run: ./mvnw -B -ntp package -DskipTests
+      # Tests start their databases with Testcontainers (Docker is available on GitHub runners).
+      - name: Build and test
+        run: ./mvnw -B -ntp verify
