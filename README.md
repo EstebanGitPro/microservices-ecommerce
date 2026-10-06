@@ -32,3 +32,7 @@ cd product-service
 docker compose up -d mongodb
 ./mvnw spring-boot:run
 ```
+
+## Seguridad
+
+Las vulnerabilidades revisadas en las dependencias, y la política para corregirlas, están en [SECURITY.md](SECURITY.md).

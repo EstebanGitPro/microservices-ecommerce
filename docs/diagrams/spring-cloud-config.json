@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Spring Cloud Config: dependencias por servicio",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "configdata",
+      "type": "external",
+      "label": "config-data",
+      "sublabel": "GitHub (privado)",
+      "tag": "product-service.yml ...",
+      "pos": [
+        40,
+        250
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "configserver",
+      "type": "backend",
+      "label": "config-server",
+      "sublabel": "spring-cloud-config-server",
+      "tag": ":8888",
+      "pos": [
+        320,
+        250
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "product",
+      "type": "backend",
+      "label": "product-service",
+      "sublabel": "spring-cloud-starter-config",
+      "pos": [
+        680,
+        110
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "order",
+      "type": "backend",
+      "label": "order-service",
+      "sublabel": "spring-cloud-starter-config",
+      "pos": [
+        680,
+        250
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "inventory",
+      "type": "backend",
+      "label": "inventory-service",
+      "sublabel": "spring-cloud-starter-config",
+      "pos": [
+        680,
+        390
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "notification",
+      "type": "backend",
+      "label": "notification-service",
+      "sublabel": "sin BOM ni starter",
+      "tag": "pendiente",
+      "pos": [
+        990,
+        390
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "discovery",
+      "type": "backend",
+      "label": "discovery-server",
+      "sublabel": "eureka-server",
+      "tag": "BOM 2025.1.1",
+      "pos": [
+        990,
+        110
+      ],
+      "size": [
+        190,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "BOM spring-cloud-dependencies 2025.1.3",
+      "wraps": [
+        "configserver",
+        "product",
+        "order",
+        "inventory"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "server-clones-repo",
+      "from": "configserver",
+      "to": "configdata",
+      "label": "git clone (main)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "product-fetch",
+      "from": "product",
+      "to": "configserver",
+      "label": "GET /product-service",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "order-fetch",
+      "from": "order",
+      "to": "configserver",
+      "label": "GET /order-service",
+      "variant": "emphasis"
+    },
+    {
+      "id": "inventory-fetch",
+      "from": "inventory",
+      "to": "configserver",
+      "label": "GET /inventory-service",
+      "fromSide": "left",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": "BOM (dependencyManagement)",
+      "items": [
+        "Catálogo de versiones compatibles",
+        "No agrega librerías al classpath",
+        "Permite declarar starters sin <version>"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Starter (dependency)",
+      "items": [
+        "spring-cloud-starter-config en cada cliente",
+        "Hace funcionar spring.config.import: configserver:",
+        "config-server usa spring-cloud-config-server"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Pendiente",
+      "items": [
+        "notification-service no lee del Config Server",
+        "discovery-server usa BOM 2025.1.1"
+      ]
+    }
+  ]
+}

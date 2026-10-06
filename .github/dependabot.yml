@@ -1,0 +1,27 @@
+# Dependabot version updates for all Maven services.
+# Only patch updates are proposed automatically (see SECURITY.md, version policy).
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directories:
+      - "/config-server"
+      - "/discovery-server"
+      - "/inventory-service"
+      - "/notification-service"
+      - "/order-service"
+      - "/product-service"
+    target-branch: "develop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+    groups:
+      maven-patches:
+        update-types:
+          - "patch"
+    commit-message:
+      prefix: "fix(deps)"

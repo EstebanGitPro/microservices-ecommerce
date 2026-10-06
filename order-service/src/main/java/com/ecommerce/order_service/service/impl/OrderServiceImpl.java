@@ -10,6 +10,8 @@ import com.ecommerce.order_service.service.OrderService;
 import com.ecommerce.order_service.service.client.InvetoryClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -22,17 +24,25 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@RefreshScope
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     //    private final WebClient.Builder webClientBuilder;
     private final InvetoryClient inventoryClient;
 
+    @Value("${order.enabled-orders: false}")
+    private boolean ordersEnabled;
+
     @Override
     @Transactional
     public OrderResponseDTO placeOrder(OrderRequestDTO orderRequest) {
 
         log.info("Colocando nuevo pedido");
+        if(!ordersEnabled){
+            log.warn("ORDER TURN DOWN : Disable service for config");
+            throw new RuntimeException("The order service is currently undergoing maintenance. please try again later.");
+        }
 
         Order order = orderMapper.toOrder(orderRequest);
 

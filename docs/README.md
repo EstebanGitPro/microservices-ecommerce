@@ -6,6 +6,9 @@ Documentos escritos sobre el código real de este repositorio, no sobre ejemplos
 |---|---|
 | [01 — Capas y flujo de datos](01-capas-y-flujo-de-datos.md) | Qué hace cada capa de `product-service`, por qué existe, y el viaje completo de un dato desde el JSON hasta Mongo y de vuelta |
 | [02 — De código Java a imagen Docker](02-de-codigo-java-a-imagen-docker.md) | `.java` → `.class` → `.jar` → imagen → contenedor. Annotation processors, fat jar, multi-stage build, Compose |
+| [03 — Ramas de git y sincronización](03-git-ramas-y-sincronizacion.md) | Qué es realmente una rama, los cuatro papelitos (`main`, `develop`, `origin/*`), la rutina post-PR, `--ff-only`, y las tres zonas de git |
+| [04 — Spring Cloud Config](04-spring-cloud-config.md) | BOM vs starter, qué servicio lleva qué dependencia, cómo el Config Server encuentra cada archivo y quién resuelve las variables de entorno. Con [diagrama](diagrams/spring-cloud-config.html) |
+| [05 — Propiedades personalizadas y refresh](05-propiedades-personalizadas-y-refresh.md) | `app.maintenance.message`, exposición de endpoints de Actuator y cómo `/actuator/refresh` aplica cambios sin reiniciar |
 
 ---
 
