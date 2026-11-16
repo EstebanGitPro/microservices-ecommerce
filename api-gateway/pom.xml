@@ -78,6 +78,12 @@
 				<artifactId>httpclient</artifactId>
 				<version>4.5.14</version>
 			</dependency>
+			<!-- CVE-2026-71891: Spring Cloud manages bcprov 1.85.2; remove once it manages >= 1.86 -->
+			<dependency>
+				<groupId>org.bouncycastle</groupId>
+				<artifactId>bcprov-jdk18on</artifactId>
+				<version>1.86</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
