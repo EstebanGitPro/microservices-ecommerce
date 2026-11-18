@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cliente HTTP de Inventory</title>
+<style>
+  :root {
+    --bg: #fafaf8; --surface: #ffffff; --text: #1d1d1b; --muted: #5f5f5a;
+    --border: #e3e2dc; --accent: #2b6cb0; --ok: #2f7d4f; --bad: #b4412f; --warn: #9a6a00;
+    --code-bg: #f2f1ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161615; --surface: #1f1f1d; --text: #ecebe6; --muted: #a3a29b;
+      --border: #34332f; --accent: #7fb0e8; --ok: #7cc79a; --bad: #ec8c7a; --warn: #e2b54f;
+      --code-bg: #262624;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161615; --surface: #1f1f1d; --text: #ecebe6; --muted: #a3a29b;
+    --border: #34332f; --accent: #7fb0e8; --ok: #7cc79a; --bad: #ec8c7a; --warn: #e2b54f;
+    --code-bg: #262624;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1.3rem; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.05rem; margin: 24px 0 8px; }
+  p.lead { color: var(--muted); margin: 0 0 24px; }
+  code { font: 0.88em ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font: 13.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace; }
+  pre code { background: none; padding: 0; }
+  .callout { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 16px 18px; margin: 20px 0; }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout strong:first-child { display: block; margin-bottom: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+  .card h3 { margin-top: 0; }
+  .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+    border: 1px solid currentColor; margin-bottom: 8px; }
+  .tag.before { color: var(--bad); } .tag.after { color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .flow { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+  .step small { color: var(--muted); display: block; }
+  .arrow { text-align: center; color: var(--muted); line-height: 1.6; font-size: 0.85rem; }
+  .step.engine { border-color: var(--accent); }
+  ol li, ul li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Cliente HTTP de <code>inventory-service</code></h1>
+<p class="lead">Por qué el código con <code>webClientBuilder.build().put()...</code> quedó comentado en
+<code>OrderServiceImpl</code>, y qué lo reemplazó.</p>
+
+<div class="callout">
+  <strong>Corrección importante antes de empezar</strong>
+  <code>WebClient</code> <em>no</em> dejó de usarse. <code>WebClientConf</code> sigue activa y cada llamada a
+  inventory sigue viajando por un <code>WebClient</code>. Lo que cambió es <strong>quién lo usa</strong>: antes lo
+  usaba tu service a mano; ahora lo usa un proxy que Spring genera a partir de la interfaz
+  <code>InvetoryClient</code>. Pasaste de <em>cliente imperativo</em> a <em>HTTP Interface</em> (declarativo).
+</div>
+
+<h2>1. Antes vs ahora</h2>
+
+<div class="grid">
+  <div class="card">
+    <span class="tag before">ANTES — imperativo</span>
+    <h3>El service arma la request</h3>
+<pre><code>private final WebClient.Builder webClientBuilder;
+
+webClientBuilder.build().put()
+  .uri("http://localhost:8082/api/v1/inventory/reduce/" + sku,
+       b -&gt; b.queryParam("quantity", quantity).build())
+  .retrieve()
+  .bodyToMono(String.class)
+  .block();</code></pre>
+  </div>
+  <div class="card">
+    <span class="tag after">AHORA — declarativo</span>
+    <h3>El service llama a un método</h3>
+<pre><code>public interface InvetoryClient {
+  @PutExchange("/api/v1/inventory/reduce/{sku}")
+  String reduceInventory(@PathVariable String sku,
+                         @RequestParam Integer quantity);
+}
+
+// en OrderServiceImpl
+inventoryClient.reduceInventory(sku, quantity);</code></pre>
+  </div>
+</div>
+
+<h2>2. Cómo funciona por dentro</h2>
+<p>Vos nunca escribís una clase que implemente <code>InvetoryClient</code>. En <code>WebClientConf</code>,
+<code>HttpServiceProxyFactory</code> lee las anotaciones (<code>@PutExchange</code>, <code>@PathVariable</code>,
+<code>@RequestParam</code>) y genera en tiempo de ejecución un objeto que las traduce a una request real.</p>
+
+<div class="flow">
+  <div class="step"><code>OrderServiceImpl.placeOrder()</code><small>Lógica de negocio: recorre los items y pide reducir stock</small></div>
+  <div class="arrow">↓ <code>inventoryClient.reduceInventory("SKU-1", 3)</code></div>
+  <div class="step"><code>InvetoryClient</code> (proxy)<small>Creado por <code>HttpServiceProxyFactory</code>. Convierte la llamada en <code>PUT /api/v1/inventory/reduce/SKU-1?quantity=3</code></small></div>
+  <div class="arrow">↓</div>
+  <div class="step"><code>WebClientAdapter</code><small>Puente entre la interfaz y el cliente HTTP concreto. Como el método devuelve <code>String</code> (no <code>Mono</code>), bloquea hasta tener la respuesta</small></div>
+  <div class="arrow">↓</div>
+  <div class="step engine"><code>WebClient</code> con <code>baseUrl("http://localhost:8082")</code><small>El motor de siempre. Sigue acá — es el bean de <code>WebClientConf</code></small></div>
+  <div class="arrow">↓ HTTP</div>
+  <div class="step"><code>inventory-service</code> :8082</div>
+</div>
+
+<p>Analogía de obra: antes el arquitecto (el service) también ponía los ladrillos. Ahora el arquitecto
+firma un plano (<code>InvetoryClient</code>) y la cuadrilla (proxy + <code>WebClient</code>) lo ejecuta.
+Los ladrillos son los mismos.</p>
+
+<h2>3. Por qué se hizo el cambio</h2>
+<table>
+  <thead><tr><th>Problema del código anterior</th><th>Cómo lo resuelve la HTTP Interface</th></tr></thead>
+  <tbody>
+    <tr><td>URL completa hardcodeada <strong>dentro del service</strong>, armada concatenando strings.</td>
+        <td>La base vive en un solo lugar (<code>WebClientConf</code>); la ruta, en la anotación. El service no sabe de URLs.</td></tr>
+    <tr><td>El service mezclaba <strong>negocio</strong> (reducir stock por item) con <strong>detalles HTTP</strong> (verbo, query params, <code>bodyToMono</code>, <code>block</code>).</td>
+        <td>El service depende de un contrato Java. Es la misma idea que <code>private final ProductService</code>: programar contra una interfaz.</td></tr>
+    <tr><td>Testear era doloroso: mockear la cadena fluida <code>build().put().uri().retrieve()...</code> requiere un mock por eslabón.</td>
+        <td>Mockeás una interfaz con un método: <code>when(inventoryClient.reduceInventory(...)).thenReturn("ok")</code>.</td></tr>
+    <tr><td>Cada nueva llamada a inventory iba a repetir la misma cadena en otro lugar.</td>
+        <td>Agregás un método a la interfaz con su anotación y listo.</td></tr>
+  </tbody>
+</table>
+<p>Eso es todo el cambio. No es que <code>WebClient</code> fuera malo: estaba <strong>en la capa equivocada</strong>.</p>
+
+<h2>4. Lo que todavía no está bien</h2>
+<p>El refactor mejoró el diseño, pero quedan detalles que conviene que conozcas:</p>
+<ol>
+  <li><strong><code>localhost:8082</code> sigue hardcodeado.</strong> Hay Eureka en el proyecto y la config de
+    <code>order-service</code> trae una sección <code>eureka</code>, pero <code>order-service/pom.xml</code> no tiene el cliente de
+    Eureka ni load balancer. Para resolver por nombre haría falta el starter de Eureka client, un
+    <code>WebClient.Builder</code> anotado con <code>@LoadBalanced</code> y <code>baseUrl("http://inventory-service")</code>.</li>
+  <li><strong>El bean se llama <code>webClientBuilder</code> pero devuelve un <code>WebClient</code></strong>, no un builder. Engaña al que lee.</li>
+  <li><strong>Typo:</strong> <code>InvetoryClient</code> → <code>InventoryClient</code>.</li>
+  <li><strong>Se arrastra WebFlux solo para un cliente bloqueante.</strong> El pom tiene <code>webmvc</code> y <code>webflux</code>, y la llamada
+    bloquea igual. Con Spring Boot 4 / Framework 7, la alternativa natural es <code>RestClient</code> + <code>RestClientAdapter</code>:
+    misma interfaz <code>InvetoryClient</code>, sin WebFlux. Tradeoff: cambian las excepciones del <code>catch</code>
+    (<code>WebClientResponseException</code> → <code>HttpClientErrorException</code>/<code>HttpServerErrorException</code>,
+    <code>WebClientRequestException</code> → <code>ResourceAccessException</code>).</li>
+  <li><strong>Todo 4xx/5xx se reporta como "stock insuficiente".</strong> Un 500 de inventory no es falta de stock.
+    Convendría distinguir por código de estado.</li>
+</ol>
+
+<div class="callout warn">
+  <strong>La lección</strong>
+  La HTTP Interface no reemplaza al cliente HTTP: lo <em>esconde detrás de un contrato</em>. Por eso podés cambiar
+  <code>WebClient</code> por <code>RestClient</code> tocando solo <code>WebClientConf</code>, sin que
+  <code>OrderServiceImpl</code> se entere. Eso es exactamente lo que buscás cuando separás capas.
+</div>
+
+<h2>Archivos involucrados</h2>
+<ul>
+  <li><code>order-service/src/main/java/com/ecommerce/order_service/config/WebClientConf.java</code></li>
+  <li><code>order-service/src/main/java/com/ecommerce/order_service/service/client/InvetoryClient.java</code></li>
+  <li><code>order-service/src/main/java/com/ecommerce/order_service/service/impl/OrderServiceImpl.java</code> (líneas 31 y 54-60, código comentado)</li>
+</ul>
+
+</main>
+</body>
+</html>
