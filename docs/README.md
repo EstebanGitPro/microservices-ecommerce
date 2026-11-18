@@ -10,6 +10,7 @@ Documentos escritos sobre el código real de este repositorio, no sobre ejemplos
 | [04 — Spring Cloud Config](04-spring-cloud-config.md) | BOM vs starter, qué servicio lleva qué dependencia, cómo el Config Server encuentra cada archivo y quién resuelve las variables de entorno. Con [diagrama](diagrams/spring-cloud-config.html) |
 | [05 — Propiedades personalizadas y refresh](05-propiedades-personalizadas-y-refresh.md) | `app.maintenance.message`, exposición de endpoints de Actuator y cómo `/actuator/refresh` aplica cambios sin reiniciar |
 | [06 — Cliente HTTP de inventory](06-cliente-http-inventory.html) | Por qué la llamada imperativa con `WebClient` quedó comentada en `order-service` y cómo la reemplaza la HTTP Interface `InvetoryClient` (que sigue usando `WebClient` por debajo) |
+| [07 — WebClient con load balancer](07-webclient-load-balanced.html) | Cómo `order-service` llama a `inventory-service` por nombre: patrón Builder, `spring-cloud-starter-loadbalancer`, `@LoadBalanced` y varias instancias con `-Dserver.port=0` y un `instance-id` único |
 
 ---
 

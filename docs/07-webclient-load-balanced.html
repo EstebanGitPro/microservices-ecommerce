@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebClient con Load Balancer</title>
+<style>
+  :root {
+    --bg: #fafaf8; --surface: #ffffff; --text: #1d1d1b; --muted: #5f5f5a;
+    --border: #e3e2dc; --accent: #2b6cb0; --ok: #2f7d4f; --bad: #b4412f; --warn: #9a6a00;
+    --code-bg: #f2f1ec; --kid: #f6efe0; --kid-border: #e4cf9e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161615; --surface: #1f1f1d; --text: #ecebe6; --muted: #a3a29b;
+      --border: #34332f; --accent: #7fb0e8; --ok: #7cc79a; --bad: #ec8c7a; --warn: #e2b54f;
+      --code-bg: #262624; --kid: #2a2518; --kid-border: #5a4a26;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161615; --surface: #1f1f1d; --text: #ecebe6; --muted: #a3a29b;
+    --border: #34332f; --accent: #7fb0e8; --ok: #7cc79a; --bad: #ec8c7a; --warn: #e2b54f;
+    --code-bg: #262624; --kid: #2a2518; --kid-border: #5a4a26;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1.3rem; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.05rem; margin: 24px 0 8px; }
+  p.lead { color: var(--muted); margin: 0 0 24px; }
+  code { font: 0.88em ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font: 13.5px/1.5 ui-monospace, "SF Mono", Menlo, monospace; }
+  pre code { background: none; padding: 0; overflow-wrap: normal; }
+  .callout { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 16px 18px; margin: 20px 0; }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.bad { border-left-color: var(--bad); }
+  .callout strong:first-child { display: block; margin-bottom: 4px; }
+  .kid { background: var(--kid); border: 1px dashed var(--kid-border); border-radius: 10px;
+    padding: 14px 18px; margin: 16px 0; }
+  .kid::before { content: "Para niños"; display: block; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase; color: var(--warn); margin-bottom: 4px; }
+  .tech { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--accent); margin: 20px 0 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+  .card h3 { margin-top: 0; }
+  .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+    border: 1px solid currentColor; margin-bottom: 8px; }
+  .tag.before { color: var(--bad); } .tag.after { color: var(--ok); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .flow { display: flex; flex-direction: column; margin: 20px 0; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+  .step small { color: var(--muted); display: block; }
+  .arrow { text-align: center; color: var(--muted); line-height: 1.6; font-size: 0.85rem; }
+  .step.engine { border-color: var(--accent); }
+  figure { margin: 20px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { color: var(--muted); font-size: 0.88rem; margin-top: 8px; }
+  svg .box { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+  svg .box.accent { stroke: var(--accent); }
+  svg .box.ok { stroke: var(--ok); }
+  svg .t { fill: var(--text); font: 600 13px system-ui, sans-serif; }
+  svg .s { fill: var(--muted); font: 11.5px ui-monospace, Menlo, monospace; }
+  svg .line { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  svg .line.accent { stroke: var(--accent); }
+  svg .num { fill: var(--accent); font: 700 12px system-ui, sans-serif; }
+  ol li, ul li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Comunicación dinámica con <code>WebClient</code> y <code>@LoadBalanced</code></h1>
+<p class="lead">Cómo <code>order-service</code> dejó de llamar a <code>localhost:8082</code> y pasó a llamar a
+<code>inventory-service</code> <em>por nombre</em>, repartiendo las llamadas entre varias instancias registradas en Eureka.</p>
+
+<div class="callout bad">
+  <strong>Antes de seguir: la config actual tiene un bug</strong>
+  En <code>WebClientConf</code> la URL base es <code>http://INVENTORY-SERICE</code> (falta la <code>V</code>). Eureka no tiene
+  ningún servicio con ese nombre, así que el load balancer no encuentra instancias y la llamada falla.
+  Tiene que ser <code>http://INVENTORY-SERVICE</code>, el <code>spring.application.name</code> de inventory. Eureka no
+  distingue mayúsculas, así que <code>inventory-service</code> también sirve.
+  Al final, en la sección 7, hay otros detalles para corregir.
+</div>
+
+<h2>1. El problema: un número de teléfono fijo</h2>
+
+<div class="kid">
+  Imaginá que querés pedir una pizza y siempre llamás al celular de <strong>Juan</strong>, un empleado de la pizzería.
+  ¿Qué pasa si Juan está ocupado, se fue a su casa o cambió de número? Te quedás sin pizza. Lo mejor es llamar
+  a <strong>"la pizzería"</strong>: atiende una recepcionista que sabe qué empleados están trabajando y te pasa con uno libre.
+</div>
+
+<p class="tech">Lo técnico</p>
+<div class="grid">
+  <div class="card">
+    <span class="tag before">ANTES: dirección fija</span>
+<pre><code>@Bean
+public WebClient webClientBuilder() {
+  return WebClient.builder()
+      .baseUrl("http://localhost:8082")
+      .build();
+}</code></pre>
+    <p>Una sola máquina y un solo puerto. Si levantás una segunda instancia de inventory, nunca recibe tráfico.
+    Si la del 8082 se cae, se cortan todas las órdenes.</p>
+  </div>
+  <div class="card">
+    <span class="tag after">AHORA: nombre lógico</span>
+<pre><code>@Bean
+@LoadBalanced
+public WebClient.Builder webClientBuilder() {
+  return WebClient.builder();
+}
+
+// ...
+builder.baseUrl("http://INVENTORY-SERVICE").build();</code></pre>
+    <p><code>INVENTORY-SERVICE</code> no es un host de verdad: es el <strong>nombre del servicio en Eureka</strong>.
+    En cada request se traduce a la IP y el puerto de una instancia viva.</p>
+  </div>
+</div>
+
+<p>Para lograrlo hicieron falta tres piezas, que se explican una por una abajo:</p>
+<ol>
+  <li>Exponer un <strong><code>WebClient.Builder</code></strong> en lugar de un <code>WebClient</code> ya construido (sección 2).</li>
+  <li>Tener <strong>Spring Cloud LoadBalancer</strong> en el classpath (sección 3).</li>
+  <li>Marcar ese builder con <strong><code>@LoadBalanced</code></strong> (sección 4).</li>
+</ol>
+
+<h2>2. Qué es un Builder</h2>
+
+<div class="kid">
+  Un builder es como armar una <strong>hamburguesa en un local donde vos elegís todo</strong>. Primero decís
+  "pan", después "carne", después "queso", después "sin cebolla". Mientras elegís, la hamburguesa todavía no existe:
+  solo hay una <em>lista de instrucciones</em>. Cuando decís <strong>"¡listo, armala!"</strong> te entregan la hamburguesa
+  terminada, y esa ya no se cambia. Si querés otra distinta, pedís otra.
+</div>
+
+<p class="tech">Lo técnico</p>
+<p><strong>Builder</strong> es un patrón de diseño creacional: separa <em>cómo se configura</em> un objeto de
+<em>el objeto final</em>. Sirve cuando el objeto tiene muchas opciones (URL base, headers, filtros, codecs, timeouts) y un
+constructor con diez parámetros sería imposible de leer.</p>
+
+<pre><code>WebClient client = WebClient.builder()          // 1. empezás a pedir
+    .baseUrl("http://INVENTORY-SERVICE")         // 2. cada método configura y devuelve el mismo builder
+    .defaultHeader("X-Source", "order-service")
+    .filter(miFiltro)
+    .build();                                    // 3. "armala": devuelve un WebClient inmutable</code></pre>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th></th><th><code>WebClient.Builder</code></th><th><code>WebClient</code></th></tr></thead>
+  <tbody>
+    <tr><td>Qué es</td><td>La lista de instrucciones</td><td>La hamburguesa terminada</td></tr>
+    <tr><td>¿Se puede cambiar?</td><td>Sí, es <strong>mutable</strong></td><td>No, es <strong>inmutable</strong> y thread-safe</td></tr>
+    <tr><td>Método clave</td><td><code>.baseUrl()</code>, <code>.filter()</code>, <code>.build()</code></td><td><code>.get()</code>, <code>.put()</code>, <code>.retrieve()</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>¿Por qué el bean ahora es el Builder y no el WebClient?</h3>
+<p>Porque <code>@LoadBalanced</code> trabaja <strong>sobre el builder</strong>. Spring le agrega un filtro antes de que
+llames a <code>build()</code>. Si el bean fuera un <code>WebClient</code> ya construido, ya no habría forma de meterle ese
+filtro. Es como querer agregarle queso a la hamburguesa cuando ya está envuelta: hay que hacerlo mientras se arma.</p>
+
+<div class="callout warn">
+  <strong>Ojo: el builder es mutable y es un singleton</strong>
+  Tu bean <code>WebClient.Builder</code> es uno solo para toda la aplicación. Cuando <code>invetoryClient(builder)</code> hace
+  <code>builder.baseUrl(...)</code>, <strong>modifica ese builder compartido</strong>. Si mañana otro bean lo usa para llamar a
+  <code>product-service</code>, hereda la <code>baseUrl</code> de inventory. La solución es clonarlo:
+  <code>builder.clone().baseUrl("http://INVENTORY-SERVICE").build()</code>. <code>clone()</code> copia la configuración,
+  incluido el filtro de load balancing.
+</div>
+
+<h2>3. La dependencia <code>spring-cloud-starter-loadbalancer</code></h2>
+
+<div class="kid">
+  El load balancer es la <strong>recepcionista de la pizzería</strong>. Tiene la lista de empleados que vinieron hoy
+  (se la da Eureka) y reparte los pedidos <strong>por turnos</strong>: el primero a Juan, el segundo a Ana, el tercero a Luis,
+  el cuarto otra vez a Juan... Así nadie se queda sin hacer nada y nadie trabaja el doble.
+</div>
+
+<p class="tech">Lo técnico</p>
+<pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+  &lt;artifactId&gt;spring-cloud-starter-loadbalancer&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+<p>Trae <strong>Spring Cloud LoadBalancer</strong>, el balanceador del lado del cliente. "Del lado del cliente" quiere decir que
+la decisión de a qué instancia llamar la toma <code>order-service</code>, no un proxy externo como Nginx. Tiene tres piezas:</p>
+<ul>
+  <li><strong><code>ServiceInstanceListSupplier</code></strong>: consigue la lista de instancias de un servicio. Como el proyecto usa
+    Eureka, se la pide al <code>DiscoveryClient</code> de Eureka (y la guarda en caché un rato).</li>
+  <li><strong><code>ReactiveLoadBalancer</code></strong>: elige <em>una</em> instancia de esa lista. Por defecto es
+    <code>RoundRobinLoadBalancer</code> (por turnos). También existe <code>RandomLoadBalancer</code>.</li>
+  <li><strong>Los adaptadores HTTP</strong>: el filtro que <code>@LoadBalanced</code> conecta a <code>WebClient</code>, a
+    <code>RestClient</code> o a <code>RestTemplate</code>.</li>
+</ul>
+
+<div class="callout">
+  <strong>Dato: la dependencia ya venía incluida</strong>
+  <code>spring-cloud-starter-netflix-eureka-client</code> (5.0.3, el que ya está en <code>order-service/pom.xml</code>) trae
+  <code>spring-cloud-starter-loadbalancer</code> como dependencia transitiva con scope <code>compile</code>. Declararla de forma
+  explícita no rompe nada y deja clara la intención ("este servicio balancea"), pero no es lo que hizo que funcione.
+  El <code>api-gateway</code> también la declara: usa el mismo mecanismo con las URIs <code>lb://PRODUCT-SERVICE</code>.
+</div>
+
+<h2>4. La anotación <code>@LoadBalanced</code></h2>
+
+<div class="kid">
+  Tenés varios teléfonos en tu casa. A uno le pegás un <strong>sticker que dice "pasa por la recepcionista"</strong>.
+  Cuando marcás "la pizzería" desde ese teléfono, la llamada va primero a la recepcionista, que te conecta con un empleado.
+  Desde un teléfono sin sticker, marcar "la pizzería" no funciona: no es un número de verdad.
+</div>
+
+<p class="tech">Lo técnico</p>
+<p><code>@LoadBalanced</code> es, literalmente, un <code>@Qualifier</code>: una <strong>marca</strong> sobre un bean. No hace nada
+por sí sola. Lo que la hace funcionar es esto:</p>
+<ol>
+  <li>Al arrancar, Spring Cloud registra un <code>BeanPostProcessor</code>
+    (<code>LoadBalancerWebClientBuilderBeanPostProcessor</code>).</li>
+  <li>Ese post-processor busca los beans <code>WebClient.Builder</code> que tengan la marca <code>@LoadBalanced</code>.</li>
+  <li>A cada uno le agrega un <code>ExchangeFilterFunction</code> de load balancing. Es un filtro que se ejecuta en
+    <strong>cada request</strong>, antes de salir a la red.</li>
+  <li>En cada request, el filtro toma el <em>host</em> de la URL (<code>INVENTORY-SERVICE</code>) como <code>serviceId</code>,
+    le pide una instancia al load balancer y <strong>reescribe la URL</strong> con la IP y el puerto reales.</li>
+</ol>
+
+<figure>
+  <svg viewBox="0 0 760 330" role="img" aria-labelledby="d1t">
+    <title id="d1t">Flujo de una request balanceada desde order-service hacia tres instancias de inventory-service</title>
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="color: var(--muted)"/>
+      </marker>
+    </defs>
+    <!-- order-service -->
+    <rect class="box" x="10" y="20" width="250" height="120" rx="10"/>
+    <text class="t" x="24" y="44">order-service</text>
+    <rect class="box accent" x="24" y="56" width="222" height="30" rx="6"/>
+    <text class="s" x="34" y="76">InvetoryClient (proxy)</text>
+    <rect class="box accent" x="24" y="96" width="222" height="32" rx="6"/>
+    <text class="s" x="34" y="116">WebClient + filtro @LoadBalanced</text>
+
+    <!-- load balancer -->
+    <rect class="box accent" x="300" y="56" width="190" height="72" rx="10"/>
+    <text class="t" x="314" y="80">Spring Cloud</text>
+    <text class="t" x="314" y="98">LoadBalancer</text>
+    <text class="s" x="314" y="117">RoundRobin</text>
+
+    <!-- eureka -->
+    <rect class="box" x="300" y="226" width="190" height="80" rx="10"/>
+    <text class="t" x="314" y="250">Eureka :8761</text>
+    <text class="s" x="314" y="270">INVENTORY-SERVICE →</text>
+    <text class="s" x="314" y="288">3 instancias UP</text>
+
+    <!-- inventory instances -->
+    <rect class="box ok" x="540" y="20" width="210" height="56" rx="10"/>
+    <text class="t" x="554" y="44">inventory #1</text>
+    <text class="s" x="554" y="63">192.168.1.5:54012</text>
+    <rect class="box ok" x="540" y="108" width="210" height="56" rx="10"/>
+    <text class="t" x="554" y="132">inventory #2</text>
+    <text class="s" x="554" y="151">192.168.1.5:54088</text>
+    <rect class="box ok" x="540" y="196" width="210" height="56" rx="10"/>
+    <text class="t" x="554" y="220">inventory #3</text>
+    <text class="s" x="554" y="239">192.168.1.5:54131</text>
+
+    <!-- arrows -->
+    <path class="line" d="M246 112 L298 100" marker-end="url(#ar)"/>
+    <text class="num" x="258" y="96">1</text>
+    <path class="line" d="M395 128 L395 224" marker-end="url(#ar)"/>
+    <text class="num" x="402" y="180">2</text>
+    <path class="line accent" d="M490 80 L538 48" marker-end="url(#ar)"/>
+    <path class="line accent" d="M490 92 L538 136" marker-end="url(#ar)"/>
+    <path class="line accent" d="M490 110 L538 220" marker-end="url(#ar)"/>
+    <text class="num" x="500" y="60">3</text>
+    <!-- instances register -->
+    <path class="line" d="M644 252 L644 300 L492 286" marker-end="url(#ar)" stroke-dasharray="4 4"/>
+    <text class="s" x="560" y="318">cada instancia se registra</text>
+  </svg>
+  <figcaption>(1) La request sale hacia <code>http://INVENTORY-SERVICE/...</code> y el filtro la intercepta.
+  (2) El load balancer le pide a Eureka la lista de instancias (con caché).
+  (3) Elige una por turnos y la URL se reescribe a <code>http://192.168.1.5:54012/...</code>. Las IPs y los puertos son de ejemplo.</figcaption>
+</figure>
+
+<h3>Paso a paso de una llamada</h3>
+<div class="flow">
+  <div class="step"><code>inventoryClient.reduceInventory("SKU-1", 3)</code><small>Lo llama <code>OrderServiceImpl</code>, igual que antes</small></div>
+  <div class="arrow">↓ el proxy arma <code>PUT http://INVENTORY-SERVICE/api/v1/inventory/reduce/SKU-1?quantity=3</code></div>
+  <div class="step engine">Filtro de <code>@LoadBalanced</code><small>Ve el host <code>INVENTORY-SERVICE</code> y lo trata como <code>serviceId</code></small></div>
+  <div class="arrow">↓ "dame una instancia de INVENTORY-SERVICE"</div>
+  <div class="step engine"><code>RoundRobinLoadBalancer</code><small>Lista desde Eureka: #1, #2, #3. A esta llamada le toca la #2</small></div>
+  <div class="arrow">↓ reescribe la URL</div>
+  <div class="step"><code>PUT http://192.168.1.5:54088/api/v1/inventory/reduce/SKU-1?quantity=3</code><small>Recién ahora sale a la red</small></div>
+</div>
+
+<h3>¿Qué pasa sin la anotación?</h3>
+<p>El <code>WebClient</code> intenta resolver <code>INVENTORY-SERVICE</code> por DNS, como si fuera <code>google.com</code>. No existe,
+y obtenés un <code>WebClientRequestException</code> causado por <code>UnknownHostException</code>. En tu código cae en el
+<code>catch</code> y se muestra como "No se pudo contactar al servicio de inventario".</p>
+
+<div class="callout warn">
+  <strong><code>@LoadBalanced</code> sobre el bean <code>InvetoryClient</code> no hace nada</strong>
+  El post-processor solo mira beans de tipo <code>WebClient.Builder</code>, <code>RestClient.Builder</code> y
+  <code>RestTemplate</code>. En <code>invetoryClient(...)</code> la anotación queda como un qualifier suelto que nadie usa.
+  No rompe nada, pero confunde: parece que hace falta y no hace falta. El balanceo ya viene en el builder que recibís como
+  parámetro.
+</div>
+
+<h2>5. Levantar varias instancias de <code>inventory-service</code></h2>
+
+<div class="kid">
+  En el súper hay <strong>tres cajas abiertas</strong>. Cada caja necesita su <strong>propio número</strong> ("caja 1", "caja 2",
+  "caja 3"); si todas dijeran "caja 1", nadie sabría a cuál ir. Y cada cajero necesita su <strong>propio cartelito con su
+  nombre</strong>; si los tres se llamaran igual en la lista del gerente, el gerente pensaría que hay uno solo.
+  El número de caja es el <strong>puerto</strong>. El cartelito es el <strong>instance-id</strong>.
+</div>
+
+<p class="tech">Lo técnico: configuración en IntelliJ</p>
+<ol>
+  <li>Abrí <strong>Run → Edit Configurations…</strong> y elegí la configuración de <code>InventoryServiceApplication</code>.</li>
+  <li><strong>Modify options → Allow multiple instances</strong>. Sin esto, si apretás Run otra vez, IntelliJ detiene la instancia que
+    está corriendo en lugar de levantar otra.</li>
+  <li><strong>Modify options → Add VM options</strong>, y en el campo VM options poné:</li>
+</ol>
+<pre><code>-Dserver.port=0 -Deureka.instance.instance-id=${spring.application.name}:${random.uuid}</code></pre>
+<ol start="4">
+  <li>Dale Run dos o tres veces. Cada ejecución es una instancia nueva.</li>
+</ol>
+
+<h3><code>-D</code>: qué significa</h3>
+<p><code>-Dclave=valor</code> define una <strong>system property de la JVM</strong>. Spring Boot las lee como propiedades, y tienen
+<strong>más prioridad que <code>application.yaml</code></strong>. Por eso <code>-Dserver.port=0</code> le gana al
+<code>server.port: 8082</code> del yaml sin tocar el archivo.</p>
+
+<h3><code>-Dserver.port=0</code></h3>
+<p>El puerto <code>0</code> es especial: le dice a Spring Boot "pedile al sistema operativo <strong>cualquier puerto libre</strong>".
+Cada instancia arranca en un puerto distinto (por ejemplo 54012, 54088, 54131) y nunca chocan con
+<code>Port 8082 was already in use</code>. Que el puerto sea al azar no es problema, porque nadie llama a inventory por
+puerto: lo encuentran a través de Eureka. Cuando el servidor termina de arrancar, el cliente de Eureka registra el
+<strong>puerto real</strong>, no el 0.</p>
+
+<h3><code>-Deureka.instance.instance-id=${spring.application.name}:${random.uuid}</code></h3>
+<p>El <code>instance-id</code> es el <strong>identificador único</strong> de cada instancia dentro de Eureka. Si no lo configurás, Spring
+Cloud lo arma así:</p>
+<pre><code>${spring.cloud.client.hostname}:${spring.application.name}:${spring.application.instance_id:${server.port}}</code></pre>
+<p>Con <code>server.port=0</code>, las tres instancias terminan con el <strong>mismo</strong> ID:</p>
+<pre><code>MacBook-Pro.local:inventory-service:0   ← instancia 1
+MacBook-Pro.local:inventory-service:0   ← instancia 2 (pisa a la 1)
+MacBook-Pro.local:inventory-service:0   ← instancia 3 (pisa a la 2)</code></pre>
+<p>Eureka cree que son la misma instancia que se re-registra. En el dashboard ves <strong>una sola</strong> y el load balancer
+solo conoce una. Con la propiedad, cada una tiene un ID propio:</p>
+<pre><code>inventory-service:3f2a9c1e-8b7d-4e21-9a0f-6c55d2e1b7a4
+inventory-service:a81c04d2-1f3e-4b9a-8e6d-2d7f9b0c3e15
+inventory-service:5d9e7b30-c2a4-4f18-b6e1-9a3c8f2d0e77</code></pre>
+<ul>
+  <li><code>${spring.application.name}</code> es un <strong>placeholder</strong>: Spring lo reemplaza por <code>inventory-service</code>.</li>
+  <li><code>${random.uuid}</code> lo resuelve <code>RandomValuePropertySource</code> de Spring Boot, que genera un UUID nuevo en cada
+    arranque. También existen <code>${random.int}</code>, <code>${random.long}</code> y <code>${random.value}</code>.</li>
+</ul>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>VM options</th><th>¿Arrancan 3 instancias?</th><th>¿Eureka ve 3?</th><th>¿Se reparte la carga?</th></tr></thead>
+  <tbody>
+    <tr><td>Ninguna</td><td>No: la 2.ª falla con "port 8082 already in use"</td><td>1</td><td>No</td></tr>
+    <tr><td>Solo <code>-Dserver.port=0</code></td><td>Sí</td><td>1 (comparten instance-id)</td><td>No</td></tr>
+    <tr><td>Las dos</td><td>Sí</td><td>3</td><td><strong>Sí, por turnos</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>6. Cómo comprobar que funciona</h2>
+<ol>
+  <li>Levantá <code>config-server</code>, <code>discovery-server</code>, tres instancias de <code>inventory-service</code> y <code>order-service</code>.</li>
+  <li>Abrí <code>http://localhost:8761</code>. En <code>INVENTORY-SERVICE</code> tienen que aparecer <strong>3</strong> instancias en estado UP.</li>
+  <li>Creá varias órdenes seguidas y mirá la consola de cada instancia de inventory: los requests de
+    <code>/reduce</code> se van alternando entre ellas.</li>
+  <li>Apagá una instancia y seguí creando órdenes. Puede que alguna falle durante unos segundos, hasta que Eureka y la
+    caché del load balancer se enteren de que la instancia cayó. Después, el tráfico se reparte entre las dos que quedan.</li>
+</ol>
+
+<h2>7. Qué falta corregir en <code>WebClientConf</code></h2>
+<ol>
+  <li><strong>Typo en la URL:</strong> <code>INVENTORY-SERICE</code> → <code>INVENTORY-SERVICE</code>. Es el que rompe la comunicación hoy.</li>
+  <li><strong>Sacar <code>@LoadBalanced</code> del bean <code>invetoryClient</code></strong>: no tiene efecto ahí (sección 4).</li>
+  <li><strong>Usar <code>builder.clone()</code></strong> antes de <code>baseUrl(...)</code> para no modificar el builder compartido (sección 2).</li>
+</ol>
+<pre><code>@Bean
+@LoadBalanced
+public WebClient.Builder webClientBuilder() {
+    return WebClient.builder();
+}
+
+@Bean
+public InvetoryClient invetoryClient(WebClient.Builder builder) {
+    WebClient webClient = builder.clone()
+            .baseUrl("http://INVENTORY-SERVICE")
+            .build();
+
+    HttpServiceProxyFactory factory = HttpServiceProxyFactory
+            .builderFor(WebClientAdapter.create(webClient))
+            .build();
+
+    return factory.createClient(InvetoryClient.class);
+}</code></pre>
+
+<div class="callout">
+  <strong>La lección</strong>
+  <code>order-service</code> ya no sabe <em>dónde</em> está inventory, solo <em>cómo se llama</em>. La dirección real la resuelven
+  Eureka (quién está vivo) y el load balancer (a cuál le toca), en el momento de cada request. Por eso podés agregar o quitar
+  instancias sin tocar ni redeployar <code>order-service</code>.
+</div>
+
+<h2>Archivos involucrados</h2>
+<ul>
+  <li><code>order-service/pom.xml</code>: dependencia <code>spring-cloud-starter-loadbalancer</code></li>
+  <li><code>order-service/src/main/java/com/ecommerce/order_service/config/WebClientConf.java</code></li>
+  <li><code>order-service/src/main/java/com/ecommerce/order_service/service/client/InvetoryClient.java</code></li>
+  <li><code>inventory-service/src/main/resources/application.yaml</code>: <code>server.port: 8082</code>, que pisan las VM options</li>
+  <li><code>api-gateway/src/main/java/com/ecommerce/api_gateway/config/GatewayConfig.java</code>: el mismo mecanismo con <code>lb://</code></li>
+</ul>
+
+</main>
+</body>
+</html>
