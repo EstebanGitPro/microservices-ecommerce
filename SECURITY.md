@@ -39,7 +39,7 @@ Dependabot (`.github/dependabot.yml`) revisa los seis servicios cada lunes y abr
 | Netty (CVE-2026-100655) | 4.2.17.Final | 4.2.19.Final | order-service, notification-service | `netty.version` |
 | Bouncy Castle (CVE-2026-71891) | 1.81 / 1.85.2 | 1.86 | todos excepto notification-service | Spring Cloud 2025.1.3 + `<dependencyManagement>` |
 | FreeMarker | 2.3.34 | 2.3.35 | discovery-server | `freemarker.version` |
-| httpclient 4.x | 4.5.3 | 4.5.14 | discovery-server | `<dependencyManagement>` |
+| httpclient 4.x | 4.5.3 | 4.5.14 | todos excepto config-server y notification-service | `<dependencyManagement>` |
 | RabbitMQ Java Client (7 CVE, ver nota) | 5.27.1 | 5.34.0 | notification-service | `rabbit-amqp-client.version` |
 
 ### Nota: RabbitMQ Java Client 5.27.1 → 5.34.0

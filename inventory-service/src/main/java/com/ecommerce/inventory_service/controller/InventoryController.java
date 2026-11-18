@@ -3,8 +3,10 @@ package com.ecommerce.inventory_service.controller;
 import com.ecommerce.inventory_service.dto.InventoryRequestDTO;
 import com.ecommerce.inventory_service.dto.InventoryResponseDTO;
 import com.ecommerce.inventory_service.service.InventoryService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/inventory") // Igualamos el versionado v1
+@Slf4j
 @RequiredArgsConstructor
 public class InventoryController {
 
@@ -24,8 +27,6 @@ public class InventoryController {
         return inventoryService.isInStock(sku, quantity);
     }
 
-    // --- Endpoints CRUD (Estilo ProductController) ---
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public InventoryResponseDTO createInventory(@RequestBody @Valid InventoryRequestDTO inventoryRequest) {
@@ -34,7 +35,8 @@ public class InventoryController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<InventoryResponseDTO> getAllInventory() {
+    public List<InventoryResponseDTO> getAllInventory(HttpServletRequest request) {
+        log.info("Inventory request served on port {}", request.getServerPort());
         return inventoryService.getAllInventory();
     }
 
